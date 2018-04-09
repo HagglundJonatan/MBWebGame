@@ -67,54 +67,84 @@ function preload ()
 
     this.load.image('darkDirt', 'res/images/darkbrown.png');
     this.load.image('lighterDirt', 'res/images/lighterbrown.png');
-}
 
-function generateMap() {
-  tileMatrix = Array(numOfRows).fill().map(()=>Array(numOfColumns).fill(new MapTile('darkDirt')));
-
-  for (i = 0; i < numOfColumns; ++i) {
-    for (j = 0; j < numOfRows; ++j) {
-       tileMatrix[i][j].setXY(i*50 + 25, j*50 + 25);
-    }
-  }
+    //this.load.image('drillTruck', 'res/images/drilltruck.png');
+    this.load.spritesheet('drillTruck', 'res/images/drilltruckspritesheet.png', { frameWidth: 40, frameHeight: 40 });
 }
 
 //
 var MapTile = class MapTile {
-  constructor(type, x, y) {
+  constructor(type) {
     this.type = type;
-    this.x = x;
-    this.y = y;
   }
 
-  function getType() {
+  getType() {
     return this.type;
   }
 
-  function setXY(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-  
 }
+
+function generateMap() {
+  tileMatrix = Array(numOfRows).fill().map(()=>Array(numOfColumns).fill(new MapTile('darkDirt')));
+}
+
+
 
 function create () {
   //  A simple background for our game
-  //this.add.image(400, 300, 'background');
-
+  this.add.image(400, 300, 'background');
+  generateMap();
   gameMap = this.physics.add.staticGroup();
-
-  var lastTile = 'wall_undug';
 
   for (i = 0; i < numOfRows; ++i)
   {
     for (j = 0; j < numOfColumns; ++j)
     {
-       var newTile = tileMatrix[i][j];
-       walls.create(25 + j*50, 25 + i*50, newTile);
-       lastTile = newTile;
+      if (Math.floor(Math.random() * 10) % 2)
+      {
+        gameMap.create(25 + j*50, 25 + i*50, tileMatrix[i][j].getType());
+      }
     }
   }
+
+  //Create player
+  player = this.physics.add.sprite(40,40,'drillTruck');
+
+  player.setCollideWorldBounds(true);
+  this.physics.add.collider(player, gameMap, drillCollision);
+
+  //  Input Event
+  cursors = this.input.keyboard.createCursorKeys();
+
+  //  Our player animations, turning, walking left and walking right.
+  this.anims.create({
+      key: 'left',
+      frames: [ { key: 'drillTruck', frame: 1 } ],
+      frameRate: 10,
+      repeat: 1
+  });
+
+  this.anims.create({
+      key: 'right',
+      frames: [ { key: 'drillTruck', frame: 0 } ],
+      frameRate: 10,
+      repeat: 1
+  });
+
+  this.anims.create({
+      key: 'up',
+      frames: [ { key: 'drillTruck', frame: 2 } ],
+      frameRate: 10,
+      repeat: 1
+  });
+
+  this.anims.create({
+      key: 'down',
+      frames: [ { key: 'drillTruck', frame: 3 } ],
+      frameRate: 10,
+      repeat: 1
+  });
+
   //  Now let's create some ledges
   // platforms.create(600, 400, 'ground');
   // platforms.create(50, 250, 'ground');
@@ -185,32 +215,42 @@ function update ()
 {
   if (gameOver)
   {
-      return;
+    return;
   }
 
-  // if (cursors.left.isDown)
-  // {
-  //     player.setVelocityX(-160);
-  //
-  //     player.anims.play('left', true);
-  // }
-  // else if (cursors.right.isDown)
-  // {
-  //     player.setVelocityX(160);
-  //
-  //     player.anims.play('right', true);
-  // }
-  // else
-  // {
-  //     player.setVelocityX(0);
-  //
-  //     player.anims.play('turn');
-  // }
-  //
-  // if (cursors.up.isDown && player.body.touching.down)
-  // {
-  //     player.setVelocityY(-330);
-  // }
+  if (cursors.left.isDown)
+  {
+    player.setVelocityX(-160);
+    player.setVelocityY(0);
+    player.anims.play('left', true);
+  }
+  else if (cursors.right.isDown)
+  {
+    player.setVelocityX(160);
+    player.setVelocityY(0);
+    player.anims.play('right', true);
+  }
+  else if (cursors.down.isDown)
+  {
+    player.setVelocityX(0);
+    player.setVelocityY(160);
+    player.anims.play('down');
+  }
+  else if (cursors.up.isDown)
+  {
+    player.setVelocityX(0);
+    player.setVelocityY(-160);
+    player.anims.play('up');
+  }
+  else {
+    player.setVelocityX(0);
+    player.setVelocityY(0);
+  }
+}
+
+function drillCollision(player, mapTile)
+{
+  mapTile.disableBody(true, true);
 }
 
 // function collectStar (player, star)
